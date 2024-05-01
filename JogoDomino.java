@@ -4,29 +4,36 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Set;
+import java.util.Stack;
 
 public class JogoDomino{
 
     private int num_pecas;
     private ArrayList<Domino> pecas_disp;
-    private ArrayList<Domino> pecas_usd;
+    private Stack<Domino> pecas_usd;
+    private int num_usadas;
 
     public JogoDomino(String arq){
         pecas_disp = new ArrayList<>();
-        pecas_usd = new ArrayList<>();
+        pecas_usd = new Stack<>();
         leitura(arq);
-        jogo2();
+        jogo4();
     }
 
     class Domino{
         private int esq;
         private int dir;
-        //private boolean invert;
+        private boolean usada;
 
         private Domino(int esq, int dir){
             this.esq = esq;
             this.dir = dir;
-            //this.invert= false;
+            this.usada = false;
         }
 
         private void inverte(){
@@ -35,6 +42,10 @@ public class JogoDomino{
             this.dir = temp;
             //invert= !invert;
         }
+
+        private void inverteUsada(){
+            this.usada = !this.usada;
+        }
     }
 
     public void leitura(String lc){
@@ -42,6 +53,7 @@ public class JogoDomino{
         try (BufferedReader reader = Files.newBufferedReader(path, Charset.forName("UTF-8"))) {
             String line = reader.readLine();
             this.num_pecas = Integer.parseInt(line);
+            num_usadas = 0;
             
             while ((line = reader.readLine()) != null) {
                 try{
@@ -132,29 +144,133 @@ public class JogoDomino{
                 pecas_usd.remove(pecas_usd.size() - 1);
                 pecas_disp.add(d);
             }
+            if(d.dir!=d.esq){
+                d.inverte();
     
-            d.inverte();
+                if (pecas_usd.isEmpty() || d.esq == pecas_usd.get(pecas_usd.size() - 1).dir) {
+                    pecas_usd.add(d);
+                    pecas_disp.remove(d);
+                    jogo2(); 
     
-            if (pecas_usd.isEmpty() || d.esq == pecas_usd.get(pecas_usd.size() - 1).dir) {
-                pecas_usd.add(d);
-                pecas_disp.remove(d);
-                jogo2(); 
+                    if (pecas_usd.size() == num_pecas) {
+                        return;
+                    }
+    
+                    pecas_usd.remove(pecas_usd.size() - 1);
+                    pecas_disp.add(d);
+                }
+                d.inverte();
+            }
+            i++;
+        }
+    }
+
+
+    public void jogo3() {
+        int i = 0;
+    
+        while ( i < pecas_disp.size()) {
+            Domino d = pecas_disp.get(i);
+            if(d.usada == true){
+                i++;
+                continue;
+            }
+    
+            if (pecas_usd.isEmpty() || d.esq == pecas_usd.peek().dir) {
+                pecas_usd.push(d);
+                d.inverteUsada();
+                jogo3();
     
                 if (pecas_usd.size() == num_pecas) {
                     return;
                 }
-    
-                pecas_usd.remove(pecas_usd.size() - 1);
-                pecas_disp.add(d);
+                pecas_usd.pop();
+                d.inverteUsada();
             }
-            d.inverte();
+            if(d.dir!=d.esq){
+                d.inverte();
+    
+                if (pecas_usd.isEmpty()|| d.esq == pecas_usd.peek().dir) {
+                    pecas_usd.push(d);
+                    d.inverteUsada();
+                    jogo3();
+    
+                    if (pecas_usd.size() == num_pecas) {
+                        return;
+                    }
+    
+                    pecas_usd.pop();
+                    d.inverteUsada();
+                }
+                d.inverte();
+            }
             i++;
         }
     }
+
+
+    public void jogo4() {
+        HashMap<String,Boolean> passou = new HashMap<>();
+        int i = 0;
+    
+        while ( i < pecas_disp.size()) {
+            Domino d = pecas_disp.get(i);
+            if(d.usada == true){
+                i++;
+                continue;
+            }
+            if(passou.get(d.esq + "-" + d.dir ) == null){
+                passou.put(d.esq + "-" + d.dir , true);
+                passou.put(d.dir + "-" + d.esq , true);
+            }
+            else{
+                
+                i++;
+                continue;
+            }
+    
+            if (pecas_usd.isEmpty() || d.esq == pecas_usd.peek().dir) {
+                pecas_usd.push(d);
+                d.inverteUsada();
+                jogo4();
+    
+                if (pecas_usd.size() == num_pecas) {
+                    return;
+                }
+                pecas_usd.pop();
+                d.inverteUsada();
+            }
+            if(d.dir!=d.esq){
+                d.inverte();
+    
+                if (pecas_usd.isEmpty()|| d.esq == pecas_usd.peek().dir) {
+                    pecas_usd.push(d);
+                    d.inverteUsada();
+                    jogo4();
+    
+                    if (pecas_usd.size() == num_pecas) {
+                        return;
+                    }
+    
+                    pecas_usd.pop();
+                    d.inverteUsada();
+                }
+                d.inverte();
+            }
+            i++;
+        }
+    }
+
+
+
+   
     
 
+
+
+
     public static void main(String args[]){
-        JogoDomino jd = new JogoDomino("caso21.txt");
+        JogoDomino jd = new JogoDomino("caso28.txt");
         for (Domino d : jd.pecas_usd) {
             System.out.print(d.esq + "-" + d.dir + " ");
         }
